@@ -27,12 +27,12 @@ Dataset: 50 QA (arXiv) | Evaluated using GPT-4 rubric (relevance, grounding, com
 
 ## Demo
 
-🌐 **Live:** https://agentic-rag.onrender.com  
-🎥 **Video:** Coming soon (demo in progress)
+**Live Demo:** https://agentic-rag-gamma.vercel.app  
+**Backend API:** https://agentic-rag-production.up.railway.app
 
-→ Upload document  
-→ Ask question  
-→ See evaluation score (e.g., 8.7/10) + execution trace
+> Upload document  
+> Ask question  
+> See evaluation score (e.g., 8.7/10) + execution trace
 
 ---
 

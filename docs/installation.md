@@ -21,7 +21,7 @@ Get the Agentic RAG system up and running in minutes with this comprehensive ins
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/agentic-rag.git
+git clone https://github.com/kcsanjayj/agentic-rag.git
 cd agentic-rag
 
 # Install dependencies
@@ -35,7 +35,7 @@ make serve
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/agentic-rag.git
+git clone https://github.com/kcsanjayj/agentic-rag.git
 cd agentic-rag
 
 # Create virtual environment
@@ -179,7 +179,7 @@ Coverage report will be generated in `htmlcov/`
 ### Using Docker Compose
 ```bash
 # Clone and navigate to project
-git clone https://github.com/your-org/agentic-rag.git
+git clone https://github.com/kcsanjayj/agentic-rag.git
 cd agentic-rag
 
 # Start all services
@@ -327,8 +327,8 @@ After successful installation:
 ## 🆘 Getting Help
 
 - **Documentation**: [Full Docs](https://agentic-rag.readthedocs.io)
-- **Issues**: [GitHub Issues](https://github.com/your-org/agentic-rag/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/agentic-rag/discussions)
+- **Issues**: [GitHub Issues](https://github.com/kcsanjayj/agentic-rag/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kcsanjayj/agentic-rag/discussions)
 
 ---
 
