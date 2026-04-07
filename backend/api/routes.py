@@ -13,7 +13,7 @@ from backend.models.schemas import (
     DocumentInfo, HealthResponse
 )
 from backend.agents.orchestrator import Orchestrator
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from backend.tools.document_loader import DocumentLoader
 from backend.tools.text_splitter import TextSplitter
 from backend.core.embeddings import EmbeddingGenerator
