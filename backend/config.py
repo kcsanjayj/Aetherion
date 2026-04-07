@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     
     # Server settings
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = int(os.environ.get("PORT", 8000))  # <-- important for Render
     DEBUG: bool = True
     
     # Database settings
