@@ -16,12 +16,14 @@ if backend_dir not in sys.path:
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse as FastApiJSONResponse
 import uvicorn
 import logging
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 # Import new secure settings
 from backend.core.settings import Settings
@@ -33,6 +35,9 @@ from backend.api.routes import router
 from backend.core.logger import safe_log, get_logger
 
 logger = get_logger(__name__)
+
+# Rate limiter setup
+limiter = Limiter(key_func=get_remote_address)
 
 
 def setup_logging():
@@ -53,19 +58,41 @@ def create_app() -> FastAPI:
         description="Secure enterprise-grade RAG system with agentic processing"
     )
     
-    # CORS middleware
+    # CORS middleware - restricted to specific origins
+    origins = [
+        "https://agentic-rag-gamma.vercel.app",  # Production frontend
+        "https://agentic-rag.vercel.app",
+        "http://localhost:8000",  # Local development
+        "http://localhost:3000",
+    ]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"]
+        allow_origins=origins,
+        allow_methods=["GET", "POST", "PUT", "DELETE"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        allow_credentials=True,
+        max_age=600,
     )
+    
+    # Add rate limiter
+    app.state.limiter = limiter
+    
+    # Request size limit middleware
+    @app.middleware("http")
+    async def limit_request_size(request: Request, call_next):
+        content_length = int(request.headers.get("content-length", 0))
+        if content_length > 10_000_000:  # 10 MB limit
+            return FastApiJSONResponse(
+                status_code=413, 
+                content={"error": "Request too large", "detail": "Maximum request size is 10MB"}
+            )
+        return await call_next(request)
     
     # Global exception handler - prevents leaking sensitive data
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         logger.exception("Unhandled error occurred")
-        return JSONResponse(
+        return FastApiJSONResponse(
             status_code=500,
             content={"error": "Internal server error", "detail": "An unexpected error occurred"},
         )

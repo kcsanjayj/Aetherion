@@ -19,7 +19,7 @@ class Settings:
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
     HUGGINGFACE_API_KEY = os.environ.get("HUGGINGFACE_API_KEY", "")
     
-    # Optional configs with defaults
+    # Optional configs with defaults (DEBUG off by default for security)
     DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
     

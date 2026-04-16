@@ -7,8 +7,10 @@ import time
 import uuid
 import asyncio
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from backend.models.schemas import (
     QueryRequest, QueryResponse, DocumentUploadResponse,
     DocumentInfo, HealthResponse
@@ -26,6 +28,9 @@ import json
 
 logger = setup_logger(__name__)
 router = APIRouter(tags=["api"])
+
+# Rate limiter setup
+limiter = Limiter(key_func=get_remote_address)
 
 MODEL_ALIASES = {
     "nvidia": {
@@ -132,30 +137,38 @@ def _normalize_provider_model(provider: str, model: str) -> str:
 
 
 @router.post("/query", response_model=QueryResponse)
-async def query_documents(request: QueryRequest):
-    """Query documents using agentic RAG - filtered by active document"""
+@limiter.limit("10/minute")  # Rate limiting: 10 requests per minute per IP
+async def query_documents(request: Request, query_request: QueryRequest):
+    """Query documents using agentic RAG - filtered by active document with input validation"""
     try:
-        logger.info(f"Processing query: {request.query}")
+        safe_log(logger, "info", "Processing query request")
+        
+        # 🛡️ Input validation
+        if not query_request.query:
+            raise HTTPException(status_code=400, detail="Query cannot be empty")
+        
+        if len(query_request.query) > 2000:
+            raise HTTPException(status_code=400, detail="Query too long (max 2000 characters)")
         
         # 🎯 Check if we have an active document
         active_doc = get_active_document()
         if not active_doc["id"]:
             return QueryResponse(
-                query=request.query,
+                query=query_request.query,
                 answer="No document uploaded yet. Please upload a document first.",
                 sources=[],
                 agent_steps=[],
                 processing_time=0.0,
                 confidence_score=0.0,
-                conversation_id=request.conversation_id or str(uuid.uuid4())
+                conversation_id=query_request.conversation_id or str(uuid.uuid4())
             )
         
-        logger.info(f"🎯 Querying against active document: {active_doc['filename']}")
+        safe_log(logger, "info", "Querying against active document", document=active_doc['filename'])
         
         orchestrator = get_orchestrator()
-        response = await orchestrator.process_query(request, active_document_id=active_doc["id"])
+        response = await orchestrator.process_query(query_request, active_document_id=active_doc["id"])
         
-        logger.info(f"Query processed successfully in {response.processing_time:.2f}s")
+        safe_log(logger, "info", "Query processed successfully", time=f"{response.processing_time:.2f}s")
         return response
         
     except Exception as e:
@@ -164,8 +177,9 @@ async def query_documents(request: QueryRequest):
 
 
 @router.post("/upload", response_model=DocumentUploadResponse)
-async def upload_document(file: UploadFile = File(...)):
-    """Upload and process a document"""
+@limiter.limit("5/minute")  # Rate limiting: 5 uploads per minute per IP
+async def upload_document(request: Request, file: UploadFile = File(...)):
+    """Upload and process a document with validation"""
     logger.info(f"=== UPLOAD STARTED ===")
     logger.info(f"Received file: {file}")
     file_path = None

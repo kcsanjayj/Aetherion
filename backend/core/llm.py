@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional, List
 import openai
 import aiohttp
 from backend.utils.logger import setup_logger
+from backend.core.logger import safe_log
 from backend.config import settings, get_runtime_config
 
 logger = setup_logger(__name__)
@@ -225,19 +226,19 @@ class LLMClient:
         logger.info(f"Calling Gemini API with model: {model}, prompt length: {len(prompt)}")
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=data) as response:
+            async with session.post(url, headers=headers, json=data, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 result = await response.json()
                 if response.status != 200:
                     error_msg = f"Gemini API error (status {response.status}): {result}"
-                    logger.error(error_msg)
+                    safe_log(logger, "error", "Gemini API error", status=response.status)
                     raise Exception(error_msg)
                 if "candidates" in result and result["candidates"]:
                     text = result["candidates"][0]["content"]["parts"][0]["text"]
-                    logger.info(f"Gemini response received, length: {len(text)}")
+                    safe_log(logger, "info", "Gemini response received", length=len(text))
                     return text
                 else:
                     error_msg = f"No candidates in Gemini response: {result}"
-                    logger.error(error_msg)
+                    safe_log(logger, "error", "No candidates in Gemini response")
                     raise Exception(error_msg)
     
     async def _generate_anthropic_response(self, prompt: str, temperature: float, max_tokens: int, model: str) -> str:
@@ -264,9 +265,10 @@ class LLMClient:
         }
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=data) as response:
+            async with session.post(url, headers=headers, json=data, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 result = await response.json()
                 if response.status != 200:
+                    safe_log(logger, "error", "Anthropic API error", status=response.status)
                     raise Exception(f"Anthropic API error: {result}")
                 if "content" in result:
                     return result["content"][0]["text"]
@@ -305,16 +307,16 @@ class LLMClient:
         logger.info(f"Calling NVIDIA API with model: {model}, prompt length: {len(prompt)}")
         
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers, json=data) as response:
+            async with session.post(url, headers=headers, json=data, timeout=aiohttp.ClientTimeout(total=30)) as response:
                 result = await response.json()
                 if response.status != 200:
                     error_msg = f"NVIDIA API error (status {response.status}): {result}"
-                    logger.error(error_msg)
+                    safe_log(logger, "error", "NVIDIA API error", status=response.status)
                     raise Exception(error_msg)
                 
                 if "choices" in result and result["choices"]:
                     text = result["choices"][0]["message"]["content"]
-                    logger.info(f"NVIDIA response received, length: {len(text)}")
+                    safe_log(logger, "info", "NVIDIA response received", length=len(text))
                     return text
                 else:
                     error_msg = f"No choices in NVIDIA response: {result}"
