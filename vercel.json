@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": "frontend",
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://your-backend-url.railway.app/api/$1" }
+  ]
+}
