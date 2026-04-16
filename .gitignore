@@ -133,3 +133,5 @@ Thumbs.db
 # ==============================
 
 scripts/*.log
+
+.vercel
