@@ -349,7 +349,8 @@ class Orchestrator:
     async def process_query(
         self,
         request: QueryRequest,
-        active_document_id: str = None
+        active_document_id: str = None,
+        user_api_key: str = None
     ) -> QueryResponse:
         """
         Main entry point for processing queries.
@@ -357,6 +358,7 @@ class Orchestrator:
         Args:
             request: QueryRequest with query text
             active_document_id: ID of document to query against
+            user_api_key: User's AI provider API key
             
         Returns:
             QueryResponse with answer and metadata

@@ -71,11 +71,30 @@ class LLMClient:
             self.client = None
     
     async def generate_response(self, prompt: str, temperature: Optional[float] = None,
-                              max_tokens: int = 1000, model: Optional[str] = None) -> str:
-        """Generate a response from the LLM with multi-provider fallback"""
+                              max_tokens: int = 1000, model: Optional[str] = None,
+                              user_api_key: str = None) -> str:
+        """Generate a response from the LLM with multi-provider fallback
+        
+        Args:
+            prompt: The prompt text
+            temperature: Sampling temperature
+            max_tokens: Maximum tokens to generate
+            model: Model name to use
+            user_api_key: User-provided API key (optional, uses env if not provided)
+        """
         try:
+            # Get configuration
+            config = self._get_fresh_config()
+            preferred_provider = config.get("provider", "gemini")
+            
+            # Use user-provided API key if available, otherwise use from settings
+            api_key = user_api_key if user_api_key else config.get("api_key")
+            
+            # If no API key available, return error
+            if not api_key:
+                return "Error: No API key available. Please provide your API key in the request."
+            
             # Try selected provider first, then fail over to others.
-            preferred_provider = self._get_fresh_config().get("provider", "gemini")
             fallback_order = ["gemini", "openai", "anthropic", "nvidia", "groq", "huggingface", "local"]
             providers_to_try = [preferred_provider] + [p for p in fallback_order if p != preferred_provider]
             

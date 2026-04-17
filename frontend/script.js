@@ -8,6 +8,7 @@ class AGENTIC_RAG {
             ? 'http://localhost:8000/api/v1'  // Local testing
             : 'https://agentic-rag-production.up.railway.app/api/v1';  // Production
         this.hasDocument = false; // Track if user uploaded a document
+        this.userApiKey = ''; // User's AI provider API key
         this.initializeApp();
     }
 
@@ -167,10 +168,20 @@ class AGENTIC_RAG {
 
     async sendQueryToBackend(query) {
         try {
+            // Check if user API key is set
+            if (!this.userApiKey) {
+                this.addMessage('⚠️ Please configure your AI provider API key in settings first.', 'assistant');
+                this.isProcessing = false;
+                this.sendBtn.disabled = false;
+                return;
+            }
+
             const response = await fetch(`${this.apiBaseUrl}/query`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-API-Key': 'your-internal-api-secret', // Internal backend auth
+                    'X-User-Api-Key': this.userApiKey // User's AI provider key
                 },
                 body: JSON.stringify({
                     query: query,

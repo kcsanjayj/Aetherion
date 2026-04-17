@@ -142,10 +142,18 @@ def _normalize_provider_model(provider: str, model: str) -> str:
 
 @router.post("/query", response_model=QueryResponse, dependencies=[Depends(verify_api_key)])
 @limiter.limit("10/minute")  # Rate limiting: 10 requests per minute per IP
-async def query_documents(request: Request, query_request: QueryRequest):
-    """Query documents using agentic RAG - filtered by active document with input validation and prompt injection protection"""
+async def query_documents(
+    request: Request, 
+    query_request: QueryRequest,
+    x_user_api_key: str = Header(None, description="User's AI provider API key")
+):
+    """Query documents using agentic RAG - user provides their own API key"""
     try:
         safe_log(logger, "info", "Processing query request")
+        
+        # 🛡️ Validate user API key provided
+        if not x_user_api_key:
+            raise HTTPException(status_code=400, detail="API key required. Provide your AI provider API key in X-User-Api-Key header")
         
         # 🛡️ Prompt injection protection
         is_safe, reason = is_safe_input(query_request.query)
@@ -173,8 +181,13 @@ async def query_documents(request: Request, query_request: QueryRequest):
         
         safe_log(logger, "info", "Querying against active document", document=active_doc['filename'])
         
+        # 🎯 Pass user API key to orchestrator
         orchestrator = get_orchestrator()
-        response = await orchestrator.process_query(query_request, active_document_id=active_doc["id"])
+        response = await orchestrator.process_query(
+            query_request, 
+            active_document_id=active_doc["id"],
+            user_api_key=x_user_api_key
+        )
         
         safe_log(logger, "info", "Query processed successfully", time=f"{response.processing_time:.2f}s")
         return response

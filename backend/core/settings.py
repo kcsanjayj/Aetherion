@@ -48,7 +48,7 @@ class Settings:
     
     @staticmethod
     def validate_required_keys():
-        """Check if at least one AI provider key is configured"""
+        """Check configured AI providers - optional as users provide their own keys"""
         keys = [
             Settings.GOOGLE_API_KEY,
             Settings.OPENAI_API_KEY,
@@ -57,10 +57,6 @@ class Settings:
             Settings.GROQ_API_KEY,
             Settings.HUGGINGFACE_API_KEY,
         ]
-        
-        if not any(keys):
-            logger.warning("No AI provider API keys found in environment. Set at least one: GOOGLE_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, NVIDIA_API_KEY, GROQ_API_KEY, or HUGGINGFACE_API_KEY")
-            return False
         
         configured = []
         if Settings.GOOGLE_API_KEY:
@@ -76,7 +72,11 @@ class Settings:
         if Settings.HUGGINGFACE_API_KEY:
             configured.append("HuggingFace")
         
-        logger.info(f"Configured AI providers: {', '.join(configured)}")
+        if configured:
+            logger.info(f"Server-configured AI providers: {', '.join(configured)}")
+        else:
+            logger.info("No server-configured AI providers. Users must provide their own API keys.")
+        
         return True
 
 
