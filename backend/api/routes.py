@@ -151,22 +151,22 @@ async def query_documents(
     try:
         safe_log(logger, "info", "Processing query request")
         
-        # 🛡️ Validate user API key provided
+        # [SECURITY] Validate user API key provided
         if not x_user_api_key:
             raise HTTPException(status_code=400, detail="API key required. Provide your AI provider API key in X-User-Api-Key header")
         
-        # 🛡️ Prompt injection protection
+        # [SECURITY] Prompt injection protection
         is_safe, reason = is_safe_input(query_request.query)
         if not is_safe:
             safe_log(logger, "warning", "Unsafe input detected", reason=reason)
             raise HTTPException(status_code=400, detail=f"Unsafe input: {reason}")
         
-        # 🛡️ Input validation
+        # [SECURITY] Input validation
         is_valid, reason = validate_query_length(query_request.query)
         if not is_valid:
             raise HTTPException(status_code=400, detail=reason)
         
-        # 🎯 Check if we have an active document
+        # [DOC] Check if we have an active document
         active_doc = get_active_document()
         if not active_doc["id"]:
             return QueryResponse(
