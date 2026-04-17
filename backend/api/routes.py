@@ -884,13 +884,8 @@ async def list_available_models(request: Dict[str, Any]):
             "error": SAFE_ERROR_MESSAGE
         }
 
-@router.post("/test-api")
-async def test_api_connection(test_data: Dict[str, Any]):
-    """Test API connection - DISABLED in production"""
-    # SECURITY: Only allow debug endpoints in non-production environments
-    if not is_debug_enabled():
-        raise HTTPException(status_code=404, detail="Endpoint not found")
-    
+async def _test_api_connection_internal(test_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Internal API testing logic - can be called by other endpoints"""
     try:
         from backend.config import get_runtime_config
 
@@ -1034,95 +1029,36 @@ async def test_api_connection(test_data: Dict[str, Any]):
                     }
                 else:
                     error_text = await response.text()
-                    error_json = {}
-                    try:
-                        error_json = await response.json()
-                    except:
-                        pass
-                    
-                    # Determine error type
-                    error_type = "unknown_error"
-                    if response.status == 400:
-                        error_type = "bad_request"
-                        # Try to extract more specific error from response
-                        try:
-                            error_detail = error_json.get("error", {}).get("message", "")
-                            if "model" in error_detail.lower():
-                                error_msg = f"Invalid model '{model}' for {provider}"
-                            elif "api key" in error_detail.lower():
-                                error_msg = f"Invalid API key for {provider}"
-                            else:
-                                error_msg = f"{provider.capitalize()} API error: {error_detail or 'Bad request - check model name'}"
-                        except:
-                            error_msg = f"{provider.capitalize()} API error: Bad request - check API key and model name"
-                    elif response.status == 401:
-                        error_type = "invalid_api_key"
-                        error_msg = f"Invalid API key for {provider}"
-                    elif response.status == 429:
-                        error_type = "quota_exceeded"
-                        error_msg = f"Quota exceeded for {provider} - check billing"
-                    elif response.status == 404:
-                        error_type = "model_not_found"
-                        error_msg = f"Model '{model}' not found for {provider}"
-                        # Auto-fallback to first available model for better UX.
-                        try:
-                            models_result = await list_available_models({
-                                "provider": provider,
-                                "api_key": api_key
-                            })
-                            fallback_model = models_result.get("first_model")
-                            if fallback_model and fallback_model != model:
-                                retry_result = await test_api_connection({
-                                    "provider": provider,
-                                    "api_key": api_key,
-                                    "model": fallback_model
-                                })
-                                if retry_result.get("success"):
-                                    return {
-                                        "success": True,
-                                        "message": f"{provider.capitalize()} API connection successful with fallback model: {fallback_model}",
-                                        "error_type": None,
-                                        "model": fallback_model,
-                                        "auto_selected": True
-                                    }
-                        except Exception as retry_error:
-                            logger.warning(f"Fallback model test failed: {str(retry_error)}")
-                    elif response.status == 500 or response.status == 502 or response.status == 503:
-                        error_type = "server_error"
-                        error_msg = f"{provider.capitalize()} server error - try again"
-                    else:
-                        error_msg = f"{provider.capitalize()} API error: {response.status}"
-                    
+                    logger.warning(f"API test failed for {provider}: {response.status} - {error_text[:200]}")
                     return {
                         "success": False,
-                        "error": error_msg,
-                        "error_type": error_type,
-                        "status_code": response.status,
-                        "details": error_text[:200]
+                        "error": f"API returned error: {response.status}",
+                        "error_type": "api_error",
+                        "status_code": response.status
                     }
-        
-    except aiohttp.ClientConnectorError as e:
-        logger.error(f"Connection error testing API: {str(e)}")
-        return {
-            "success": False,
-            "error": f"Cannot connect to {provider.capitalize()} - check internet connection",
-            "error_type": "connection_error"
-        }
+                    
     except asyncio.TimeoutError:
-        logger.error(f"Timeout testing API")
+        logger.error(f"Timeout testing {provider} API")
         return {
             "success": False,
-            "error": f"{provider.capitalize()} API timeout - server not responding",
+            "error": "Connection timeout - provider may be slow or unreachable",
             "error_type": "timeout"
         }
     except Exception as e:
-        logger.error(f"Error testing API: {str(e)}")
+        logger.error(f"Error testing API connection: {str(e)}")
         # SECURITY: Don't expose internal error details
         return {
             "success": False,
             "error": SAFE_ERROR_MESSAGE,
-            "error_type": "unknown_error"
+            "error_type": "unknown"
         }
+
+
+@router.post("/test-api")
+async def test_api_connection(test_data: Dict[str, Any]):
+    """Test API connection - available in all environments"""
+    # Call the internal test function
+    return await _test_api_connection_internal(test_data)
 
 
 @router.get("/config-status")
@@ -1132,7 +1068,7 @@ async def get_config_status():
         provider = (get_runtime_config("AI_PROVIDER") or settings.AI_PROVIDER or "gemini").lower()
         model = get_runtime_config(f"{provider.upper()}_MODEL") or getattr(settings, f"{provider.upper()}_MODEL", "")
         api_key = get_runtime_config(f"{provider.upper()}_API_KEY", "")
-        test_result = await test_api_connection({
+        test_result = await _test_api_connection_internal({
             "provider": provider,
             "api_key": api_key,
             "model": model

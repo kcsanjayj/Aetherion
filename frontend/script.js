@@ -4,11 +4,13 @@ class AGENTIC_RAG {
         this.attachEventListeners();
         this.isProcessing = false;
         this.typingTimeout = null;
-        this.apiBaseUrl = window.location.hostname === 'localhost' 
+        this.apiBaseUrl = window.location.hostname === 'localhost'
             ? 'http://localhost:8000/api/v1'  // Local testing
             : 'https://agentic-rag-production.up.railway.app/api/v1';  // Production
-        this.hasDocument = false; // Track if user uploaded a document
+        this.hasDocument = false; // Track if user has uploaded a document
         this.userApiKey = ''; // User's AI provider API key
+        // Internal backend API key - must match Railway API_SECRET environment variable
+        this.internalApiKey = window.API_SECRET || 'your-internal-api-secret';
         this.initializeApp();
     }
 
@@ -180,7 +182,7 @@ class AGENTIC_RAG {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-API-Key': 'your-internal-api-secret', // Internal backend auth
+                    'X-API-Key': this.internalApiKey, // Internal backend auth
                     'X-User-Api-Key': this.userApiKey // User's AI provider key
                 },
                 body: JSON.stringify({
@@ -346,14 +348,22 @@ class AGENTIC_RAG {
             // Backward-compatible flow:
             // 1) Prefer new /config-status endpoint
             // 2) Fall back to /config on older backends
-            let response = await fetch(`${this.apiBaseUrl}/config-status`);
+            let response = await fetch(`${this.apiBaseUrl}/config-status`, {
+                headers: {
+                    'X-API-Key': this.internalApiKey
+                }
+            });
             if (response.ok) {
                 const status = await response.json();
                 this.updateApiStatusBadge(!!status.active, status.status_text || (status.active ? 'API Active' : 'API Inactive'));
                 return;
             }
 
-            response = await fetch(`${this.apiBaseUrl}/config`);
+            response = await fetch(`${this.apiBaseUrl}/config`, {
+                headers: {
+                    'X-API-Key': this.internalApiKey
+                }
+            });
             if (!response.ok) {
                 this.updateApiStatusBadge(false, 'API Inactive');
                 return;
@@ -375,7 +385,10 @@ class AGENTIC_RAG {
             }
             const testResp = await fetch(`${this.apiBaseUrl}/test-api`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': this.internalApiKey
+                },
                 body: JSON.stringify({
                     provider,
                     model,
@@ -426,6 +439,9 @@ class AGENTIC_RAG {
 
             const response = await fetch(`${this.apiBaseUrl}/upload`, {
                 method: 'POST',
+                headers: {
+                    'X-API-Key': this.internalApiKey // Internal backend auth
+                },
                 body: formData
             });
 
@@ -552,7 +568,8 @@ class AGENTIC_RAG {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                    'X-API-Key': this.internalApiKey
+                },
             });
             if (response.ok) {
                 console.log('✅ Runtime config cleared on chat refresh');
@@ -625,7 +642,11 @@ class AGENTIC_RAG {
 
     async fetchCurrentConfig() {
         try {
-            const response = await fetch(`${this.apiBaseUrl}/config`);
+            const response = await fetch(`${this.apiBaseUrl}/config`, {
+                headers: {
+                    'X-API-Key': this.internalApiKey
+                }
+            });
             const config = await response.json();
             
             // Set provider
@@ -680,6 +701,7 @@ class AGENTIC_RAG {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-API-Key': this.internalApiKey
                     },
                     body: JSON.stringify({
                         provider: provider,
@@ -784,6 +806,7 @@ class AGENTIC_RAG {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-API-Key': this.internalApiKey
                 },
                 body: JSON.stringify({
                     provider,
@@ -818,7 +841,11 @@ class AGENTIC_RAG {
             let testKey = apiKey;
             if (!testKey) {
                 try {
-                    const configResponse = await fetch(`${this.apiBaseUrl}/config`);
+                    const configResponse = await fetch(`${this.apiBaseUrl}/config`, {
+                        headers: {
+                            'X-API-Key': this.internalApiKey
+                        }
+                    });
                     const config = await configResponse.json();
                     if (config.has_api_key) {
                         // Key exists but is masked, backend will use it
@@ -828,11 +855,12 @@ class AGENTIC_RAG {
                     console.log('Could not fetch existing config for test');
                 }
             }
-            
+
             const testResponse = await fetch(`${this.apiBaseUrl}/test-api`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-API-Key': this.internalApiKey
                 },
                 body: JSON.stringify({
                     provider,
@@ -875,6 +903,7 @@ class AGENTIC_RAG {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-API-Key': this.internalApiKey
                 },
                 body: JSON.stringify({
                     provider,
