@@ -5,7 +5,7 @@ Embedding generation using Gemini API (lightweight, no heavy ML models)
 import asyncio
 from typing import List
 import numpy as np
-from google import genai
+import google.generativeai as genai
 from backend.utils.logger import setup_logger
 from backend.config import settings
 
