@@ -232,11 +232,20 @@ async def upload_document(request: Request, file: UploadFile = File(...)):
             )
         await file.seek(0)  # Reset file pointer after reading
         
-        # Save uploaded file
+        # Save uploaded file - SECURITY: Sanitize filename to prevent path traversal
         upload_dir = "data/uploads"
         os.makedirs(upload_dir, exist_ok=True)
         
-        file_path = os.path.join(upload_dir, file.filename)
+        # SECURITY: Sanitize filename to prevent directory traversal attacks
+        # Remove any path separators and get only the base filename
+        safe_filename = os.path.basename(file.filename)
+        # Remove any potentially dangerous characters
+        safe_filename = re.sub(r'[^\w\-\.]', '_', safe_filename)
+        # Ensure filename is not empty after sanitization
+        if not safe_filename or safe_filename == '.' or safe_filename == '..':
+            raise HTTPException(status_code=400, detail="Invalid filename after sanitization")
+        
+        file_path = os.path.join(upload_dir, safe_filename)
         
         # Write file
         with open(file_path, "wb") as buffer:
