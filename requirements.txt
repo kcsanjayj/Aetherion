@@ -1,4 +1,4 @@
-﻿accelerate==0.24.1
+accelerate==0.24.1
 ag2==0.11.1
 aiofiles==23.2.1
 aiohappyeyeballs==2.6.1
@@ -221,7 +221,7 @@ threadpoolctl==3.6.0
 tiktoken==0.5.2
 tokenizers==0.22.2
 toml==0.10.2
-torch==2.1.2
+torch==2.2.0
 torchvision==0.16.2
 tornado==6.5.4
 tqdm==4.67.3
