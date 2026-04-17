@@ -5,7 +5,7 @@ API authentication, prompt injection protection, security headers
 import os
 import re
 from fastapi import Header, HTTPException, Request
-from typing import Optional
+from typing import Optional, Any
 
 
 # API Secret for internal authentication - MUST be set in environment
@@ -116,3 +116,21 @@ def validate_query_length(query: str) -> tuple[bool, str]:
         return False, f"Query too complex (estimated {int(estimated_tokens)} tokens, max {MAX_TOKENS_PER_REQUEST//2})"
     
     return True, "OK"
+
+
+def sanitize_output(data: Any) -> Any:
+    """
+    Recursively sanitize output to prevent HTML/JS injection
+    and unsafe content in API responses.
+    """
+    if isinstance(data, str):
+        # Escape dangerous HTML characters
+        data = data.replace("<", "&lt;").replace(">", "&gt;")
+        # Remove script-like patterns (basic protection)
+        data = re.sub(r"(javascript:|<script.*?>.*?</script>)", "", data, flags=re.IGNORECASE)
+        return data
+    elif isinstance(data, dict):
+        return {k: sanitize_output(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_output(item) for item in data]
+    return data
