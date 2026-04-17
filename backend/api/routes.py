@@ -200,7 +200,7 @@ async def query_documents(
 @router.post("/upload", response_model=DocumentUploadResponse, dependencies=[Depends(verify_api_key)])
 @limiter.limit("5/minute")  # Rate limiting: 5 uploads per minute per IP
 async def upload_document(request: Request, file: UploadFile = File(...)):
-    """Upload and process a document with validation and size limit"
+    """Upload and process a document with validation and size limit"""
     logger.info(f"=== UPLOAD STARTED ===")
     logger.info(f"Received file: {file}")
     file_path = None
