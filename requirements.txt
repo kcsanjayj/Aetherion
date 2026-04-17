@@ -151,7 +151,6 @@ propcache==0.4.1
 proto-plus==1.27.1
 protobuf==4.25.8
 psutil==5.9.6
-psycopg2==2.9.11
 psycopg2-binary==2.9.9
 pulsar-client==3.10.0
 pyarrow==23.0.1
@@ -222,7 +221,7 @@ tiktoken==0.5.2
 tokenizers==0.22.2
 toml==0.10.2
 torch==2.2.0
-torchvision==0.16.2
+torchvision==0.17.2
 tornado==6.5.4
 tqdm==4.67.3
 transformers==5.5.0
