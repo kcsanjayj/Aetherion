@@ -845,12 +845,12 @@ async def list_available_models(request: Dict[str, Any]):
 
 @router.post("/test-api")
 async def test_api_connection(test_data: Dict[str, Any]):
-    """Test API connection for a specific provider only"""
     try:
         from backend.config import get_runtime_config
-        
+
         provider = test_data.get("provider", "").lower()
         api_key = test_data.get("api_key", "")
+
         
         # If api_key is null/empty/'existing', get from runtime config
         if not api_key or api_key == 'existing':
