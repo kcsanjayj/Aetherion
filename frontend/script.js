@@ -4,7 +4,9 @@ class AGENTIC_RAG {
         this.attachEventListeners();
         this.isProcessing = false;
         this.typingTimeout = null;
-        this.apiBaseUrl = 'http://localhost:8000/api/v1';  // Local testing
+        this.apiBaseUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000/api/v1'  // Local development
+            : 'https://agentic-rag-production.up.railway.app/api/v1';  // Production
         this.hasDocument = false; // Track if user uploaded a document
         // 🎯 Session-based config (memory only, cleared on refresh)
         this.sessionConfig = {
