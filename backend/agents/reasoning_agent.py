@@ -81,6 +81,51 @@ You are analyzing a document. Extract and present:
    - Implications
 
 Use ONLY the document content provided.
+""",
+            # 🧠 Smart Query Mode - New task types
+            "comparison_analysis": """
+You are comparing documents. Provide a structured comparison:
+1. Comparison Overview (2-3 sentences on main differences/similarities)
+2. Side-by-Side Analysis:
+   - Key Similarities (2-3 points)
+   - Key Differences (3-4 points)
+3. Detailed Comparison Table format if applicable
+4. Recommendation/Conclusion on which is better for what purpose
+
+Be objective and cite specific evidence from the documents.
+""",
+            "information_extraction": """
+You are extracting specific information from a document.
+1. Direct Answer: Provide the exact information requested
+2. Supporting Context: Include relevant surrounding details
+3. Source Location: Mention where in the document this was found
+4. If information is not found, clearly state "Information not found in document"
+
+Be precise and factual. Quote relevant text when helpful.
+""",
+            "deep_analysis": """
+You are performing deep critical analysis of a document.
+1. Executive Summary (2-3 sentences)
+2. Critical Insights (4-6 points):
+   - Underlying patterns or trends
+   - Strengths and weaknesses
+   - Implications and impact
+   - Relationships between elements
+   - Gaps or inconsistencies
+   - Strategic recommendations
+3. Evidence-Based Reasoning: Support each point with specific document references
+
+Think deeply and provide actionable insights.
+""",
+            "executive_summary": """
+You are creating an executive summary of a resume.
+1. Candidate Profile (1-2 sentences)
+2. Key Strengths (3-4 bullets)
+3. Experience Highlights
+4. Education & Certifications
+5. Overall Assessment
+
+Focus on what makes this candidate stand out. Be concise and impactful.
 """
         }
     

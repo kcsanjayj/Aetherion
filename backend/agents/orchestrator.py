@@ -15,6 +15,13 @@ import uuid
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from backend.agents.agents import PlannerAgent, ReasoningAgent, CriticAgent, RetryAgent
+from backend.agents.cross_encoder_ranker_agent import CrossEncoderRankerAgent
+from backend.agents.multimodal_retrieval_agent import MultimodalRetrievalAgent
+from backend.agents.visual_parsing_agent import VisualParsingAgent
+from backend.agents.table_extraction_agent import TableExtractionAgent
+from backend.agents.fact_verification_agent import FactVerificationAgent
+from backend.agents.conflict_resolution_agent import ConflictResolutionAgent
+from backend.agents.meta_data_enrichment_agent import MetaDataEnrichmentAgent
 from backend.core.embeddings import EmbeddingGenerator
 from backend.utils.logger import setup_logger
 from backend.models.schemas import QueryRequest, QueryResponse
@@ -100,6 +107,22 @@ def planner(query: str, doc_text: str) -> str:
     return "general_analysis"
 
 
+def _detect_query_intent(query: str) -> str:
+    """🧠 Smart Query: Detect query intent for routing"""
+    query_lower = query.lower()
+    
+    if any(w in query_lower for w in ["compare", "vs", "versus", "difference", "similarities", "contrast"]):
+        return "compare"
+    elif any(w in query_lower for w in ["summarize", "summary", "overview", "tldr", "gist"]):
+        return "summarize"
+    elif any(w in query_lower for w in ["extract", "find", "list", "get", "what is", "who is", "when", "where"]):
+        return "extract"
+    elif any(w in query_lower for w in ["analyze", "evaluate", "explain", "why", "how", "assess"]):
+        return "analyze"
+    
+    return "query"
+
+
 # =============================================================================
 # 2. ADAPTIVE RETRIEVER - Dynamic Retrieval
 # =============================================================================
@@ -157,10 +180,21 @@ class ReasoningEngine:
     """Generate intelligent responses using LLM"""
     
     def __init__(self):
-        self.llm = LLMClient()
+        self.llm = None  # Will be created fresh for each query
     
-    async def generate(self, context: str, task: str, memory_context: str = "") -> str:
-        """Generate response with structured prompt"""
+    async def generate(self, context: str, task, memory_context: str = "") -> str:
+        """Generate response with structured prompt - accepts task dict or string"""
+        
+        # Create fresh LLMClient for each query to pick up new config
+        self.llm = LLMClient()
+        
+        # 🧠 Handle task as dict or string
+        if isinstance(task, dict):
+            task_type = task.get("task_type", "general_analysis")
+            query_intent = task.get("query_intent", "query")
+        else:
+            task_type = task
+            query_intent = "query"
         
         task_prompts = {
             "compare_documents": "Compare documents focusing on similarities/differences.",
@@ -170,10 +204,11 @@ class ReasoningEngine:
             "legal_analysis": "Analyze legal terms, obligations, clauses.",
             "summarization": "Provide comprehensive summary.",
             "extraction": "Extract specific information.",
-            "general_analysis": "Analyze and answer based on content."
+            "general_analysis": "Analyze and answer based on content.",
+            "comparison_analysis": "🧠 Smart Query - Comparison: Provide structured side-by-side analysis with similarities and differences."
         }
         
-        instruction = task_prompts.get(task, task_prompts["general_analysis"])
+        instruction = task_prompts.get(task_type, task_prompts["general_analysis"])
         
         prompt = f"""You are an intelligent document analysis agent.
 
@@ -282,13 +317,20 @@ class Orchestrator:
     """
     🧠 Professional Agentic RAG Orchestrator
     
-    Combines all 6 components:
+    Combines all 13 components:
     1. PLANNER - Decision Maker
     2. ADAPTIVE RETRIEVER - Dynamic Retrieval  
     3. REASONING ENGINE - LLM Core
     4. CRITIC - Self-Evaluation
     5. RETRY HANDLER - Autonomy
     6. MEMORY - Multi-step Intelligence
+    7. CROSS ENCODER RANKER - Document Re-ranking
+    8. MULTIMODAL RETRIEVAL - Cross-modal Search
+    9. VISUAL PARSING - Image Content Extraction
+    10. TABLE EXTRACTION - Structured Data Parsing
+    11. FACT VERIFICATION - Hallucination Detection
+    12. CONFLICT RESOLUTION - Source Reconciliation
+    13. METADATA ENRICHMENT - Document Enhancement
     """
     
     def __init__(self):
@@ -299,7 +341,16 @@ class Orchestrator:
         self.vector_store = get_vector_store()
         self._query_cache = {}  # Simple in-memory cache for repeated queries
         
-        logger.info("🧠 Orchestrator initialized with 6-component agentic system + query caching")
+        # Initialize new agents
+        self.cross_encoder = CrossEncoderRankerAgent()
+        self.multimodal_retrieval = MultimodalRetrievalAgent()
+        self.visual_parsing = VisualParsingAgent()
+        self.table_extraction = TableExtractionAgent()
+        self.fact_verification = FactVerificationAgent()
+        self.conflict_resolution = ConflictResolutionAgent()
+        self.meta_data_enrichment = MetaDataEnrichmentAgent()
+        
+        logger.info("🧠 Orchestrator initialized with 6-component agentic system + 7 new specialized agents + query caching")
     
     def _get_cached_response(self, query: str, doc_id: str) -> Optional[Dict[str, Any]]:
         """Check if query result is cached"""
@@ -422,9 +473,12 @@ class Orchestrator:
             
         except Exception as e:
             logger.error(f"❌ Orchestrator error: {str(e)}")
+            raw_error = str(e)
+            if "No AI provider is configured" in raw_error or ".env" in raw_error:
+                raw_error = "No active AI provider is available. Configure provider/API key in AI Config, or use Local Ollama."
             return QueryResponse(
                 query=request.query,
-                answer=f"Error: {str(e)}",
+                answer=f"Error: {raw_error}",
                 sources=[],
                 agent_steps=[{"error": str(e)}],
                 processing_time=time.time() - start_time,
@@ -450,6 +504,39 @@ class Orchestrator:
             logger.warning(f"Could not get doc preview: {e}")
             return ""
     
+    def _structure_comparison_context(self, docs: List[Dict[str, Any]]) -> str:
+        """🧠 Smart Query: Structure multiple documents for comparison"""
+        if not docs:
+            return ""
+        
+        # Group by filename/source
+        doc_groups = {}
+        for doc in docs:
+            source = doc.get('metadata', {}).get('filename', 'Unknown')
+            if source not in doc_groups:
+                doc_groups[source] = []
+            doc_groups[source].append(doc.get('content', ''))
+        
+        # Build structured comparison context
+        sections = []
+        sections.append("=" * 60)
+        sections.append("COMPARISON CONTEXT - MULTIPLE DOCUMENTS")
+        sections.append("=" * 60)
+        
+        for i, (source, contents) in enumerate(doc_groups.items(), 1):
+            sections.append(f"\n{'─' * 40}")
+            sections.append(f"DOCUMENT {i}: {source}")
+            sections.append(f"{'─' * 40}")
+            # Combine chunks for this document
+            doc_text = "\n".join(contents[:3])  # Top 3 chunks per doc
+            sections.append(doc_text[:1500])  # Limit per doc
+        
+        sections.append(f"\n{'=' * 60}")
+        sections.append("END OF COMPARISON CONTEXT")
+        sections.append(f"{'=' * 60}\n")
+        
+        return "\n".join(sections)
+    
     async def _run_agentic_loop(
         self,
         query: str,
@@ -467,15 +554,33 @@ class Orchestrator:
         
         # 1. 🔥 PLAN - Decide what to do
         plan_start = time.time()
-        task = planner(query, doc_text)
-        latencies['planner'] = time.time() - plan_start
-        logger.info(f"📋 PLAN: {task} ({latencies['planner']:.3f}s)")
+        task_result = planner(query, doc_text)
         
-        # 2. 🔥 RETRIEVE - Adaptive retrieval
+        # 🧠 Smart Query: Convert string task to dict with intent detection
+        task = {
+            "task_type": task_result,
+            "strategy": task_result,
+            "confidence": 0.8,
+            "query_intent": _detect_query_intent(query)
+        }
+        
+        latencies['planner'] = time.time() - plan_start
+        logger.info(f"📋 PLAN: {task['task_type']} | Intent: {task['query_intent']} ({latencies['planner']:.3f}s)")
+        
+        # 2. 🔥 RETRIEVE - Adaptive retrieval (Smart Query: multi-doc for comparison)
         retrieve_start = time.time()
-        docs = await self.retriever.retrieve(query, doc_id)
+        
+        # 🧠 Smart Query: Comparison mode retrieves more documents
+        if task.get("query_intent") == "compare":
+            docs = await self.retriever.retrieve(query, doc_id, top_k=10)
+            # Structure for comparison - separate sections
+            context = self._structure_comparison_context(docs)
+            logger.info(f"📚 COMPARISON MODE: Retrieved {len(docs)} documents for structured comparison")
+        else:
+            docs = await self.retriever.retrieve(query, doc_id)
+            context = "\n\n".join([d.get('content', '') for d in docs[:6]])
+        
         latencies['retrieval'] = time.time() - retrieve_start
-        context = "\n\n".join([d.get('content', '') for d in docs[:6]])
         logger.info(f"📚 RETRIEVED: {len(docs)} docs, {len(context)} chars ({latencies['retrieval']:.3f}s)")
         
         # Get memory context

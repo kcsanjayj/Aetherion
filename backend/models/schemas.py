@@ -13,6 +13,9 @@ class QueryRequest(BaseModel):
     conversation_id: Optional[str] = Field(None, description="Conversation ID for context")
     top_k: Optional[int] = Field(6, description="Number of documents to retrieve")
     use_agents: Optional[bool] = Field(True, description="Whether to use agentic processing")
+    api_key: Optional[str] = Field(None, description="API key for the selected provider (BYOK)")
+    provider: Optional[str] = Field(None, description="LLM provider to use (openai, gemini, nvidia, etc.)")
+    model: Optional[str] = Field(None, description="Specific model to use")
 
 
 class DocumentInfo(BaseModel):

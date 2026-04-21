@@ -13,6 +13,7 @@ class PlannerAgent:
     """Brain of the agentic system - decides the task based on document and query"""
     
     def __init__(self):
+        # Document type patterns
         self.task_patterns = {
             "resume_analysis": [
                 r"\bresume\b", r"\bcv\b", r"\bcurriculum\b", r"\bexperience\b",
@@ -20,7 +21,7 @@ class PlannerAgent:
             ],
             "research_summary": [
                 r"\bresearch\b", r"\bpaper\b", r"\bstudy\b", r"\babstract\b",
-                r"\bmethodology\b", r"\bresults\b", r"\bconclusion\b", r"\bf findings\b"
+                r"\bmethodology\b", r"\bresults\b", r"\bconclusion\b", r"\bfindings\b"
             ],
             "invoice_analysis": [
                 r"\binvoice\b", r"\bbill\b", r"\breceipt\b", r"\bpayment\b",
@@ -31,71 +32,117 @@ class PlannerAgent:
                 r"\bterms\b", r"\bconditions\b", r"\bclause\b", r"\bsection\b"
             ]
         }
+        
+        # 🧠 Smart Query Mode - Intent detection patterns
+        self.intent_patterns = {
+            "compare": [
+                r"\bcompare\b", r"\bcomparison\b", r"\bversus\b", r"\bvs\b",
+                r"\bdifference\b", r"\bdifferences\b", r"\bsimilarities\b",
+                r"\bcontrast\b", r"\bwhich is better\b", r"\bwhich one\b",
+                r"\bhow do.*compare\b", r"\bwhat.*difference\b"
+            ],
+            "summarize": [
+                r"\bsummarize\b", r"\bsummary\b", r"\boverview\b", r"\bbrief\b",
+                r"\btldr\b", r"\bmain points\b", r"\bkey takeaways\b",
+                r"\bwhat is this about\b", r"\bwhat does it say\b"
+            ],
+            "extract": [
+                r"\bextract\b", r"\bfind\b", r"\bget\b", r"\bwhat is\b",
+                r"\bwhat are\b", r"\blist\b", r"\bshow me\b", r"\bwhere is\b",
+                r"\bwhen is\b", r"\bwho is\b", r"\bhow much\b", r"\bhow many\b"
+            ],
+            "analyze": [
+                r"\banalyze\b", r"\banalysis\b", r"\bevaluate\b", r"\bassess\b",
+                r"\breview\b", r"\bcritique\b", r"\binterpret\b", r"\bexplain\b",
+                r"\bwhy\b", r"\bhow\b", r"\bwhat does this mean\b"
+            ]
+        }
+    
+    def _detect_intent(self, query: str) -> str:
+        """🧠 Smart Query Mode - Detect query intent"""
+        query_lower = query.lower()
+        
+        for intent, patterns in self.intent_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, query_lower):
+                    logger.info(f"🧠 Intent detected: {intent}")
+                    return intent
+        
+        return "query"  # Default intent
     
     def plan(self, query: str, doc_preview: str) -> Dict[str, Any]:
-        """
-        Plan the task based on query and document preview
-        
-        Args:
-            query: User's query
-            doc_preview: Preview of document content
-            
-        Returns:
-            Task plan with type and strategy
-        """
+        """Plan the task based on query and document preview with Smart Query Mode"""
         try:
-            # 🔥 PLANNER: Intelligent document type detection
+            # 🧠 Step 1: Detect query intent (Smart Query Mode)
+            intent = self._detect_intent(query)
+            
+            # Step 2: Detect document type
             doc_type = self._detect_document_type(doc_preview)
             
-            # Determine task type based on document type and query
-            if doc_type == "resume" or "resume" in query.lower():
+            # Step 3: Combine intent + doc_type for smart strategy
+            if intent == "compare":
+                task_type = "comparison_analysis"
+                strategy = "structured_comparison"
+                confidence = 0.9
+            elif intent == "summarize":
+                if doc_type == "resume":
+                    task_type = "resume_summary"
+                    strategy = "executive_summary"
+                elif doc_type == "research":
+                    task_type = "research_summary"
+                    strategy = "abstract_key_findings"
+                else:
+                    task_type = "general_summary"
+                    strategy = "comprehensive_overview"
+                confidence = 0.9
+            elif intent == "extract":
+                task_type = "information_extraction"
+                strategy = "targeted_extraction"
+                confidence = 0.85
+            elif intent == "analyze":
+                task_type = "deep_analysis"
+                strategy = "critical_analysis"
+                confidence = 0.85
+            # Document-specific fallbacks
+            elif doc_type == "resume":
                 task_type = "resume_analysis"
                 strategy = "extract_skills_experience"
-                reasoning = "Resume detected - focusing on skills, experience, and qualifications"
-            elif doc_type == "research" or "research" in query.lower() or "paper" in query.lower():
+                confidence = 0.8
+            elif doc_type == "research":
                 task_type = "research_summary"
                 strategy = "abstract_key_findings"
-                reasoning = "Research paper detected - focusing on abstract, methodology, and key findings"
-            elif doc_type == "invoice" or "invoice" in query.lower() or "bill" in query.lower():
+                confidence = 0.8
+            elif doc_type == "invoice":
                 task_type = "invoice_analysis"
                 strategy = "extract_amounts_dates"
-                reasoning = "Invoice detected - focusing on amounts, dates, and line items"
-            elif doc_type == "legal" or "legal" in query.lower() or "contract" in query.lower():
+                confidence = 0.8
+            elif doc_type == "legal":
                 task_type = "legal_document"
                 strategy = "extract_clauses_obligations"
-                reasoning = "Legal document detected - focusing on clauses, obligations, and key terms"
-            elif "summarize" in query.lower() or "summary" in query.lower():
-                task_type = "general_summary"
-                strategy = "comprehensive_overview"
-                reasoning = "Summary request - providing comprehensive overview"
+                confidence = 0.8
             else:
                 task_type = "general_qa"
                 strategy = "contextual_answer"
-                reasoning = "General query - providing contextual answer"
+                confidence = 0.6
             
-            # Add confidence based on clarity
-            confidence = 0.8 if doc_type != "unknown" else 0.6
-            
-            logger.info(f"📋 Plan: {task_type} | Strategy: {strategy} | Doc Type: {doc_type}")
+            logger.info(f"🧠 Smart Query | Intent: {intent} | Task: {task_type} | Strategy: {strategy}")
             
             return {
                 "task_type": task_type,
                 "strategy": strategy,
-                "reasoning": reasoning,
                 "confidence": confidence,
                 "document_type": doc_type,
-                "query_type": self._detect_query_type(query)
+                "query_intent": intent  # 🧠 New: Include detected intent
             }
             
         except Exception as e:
-            logger.error(f"Error in planning: {str(e)}")
+            logger.error(f"Planning error: {e}")
             return {
                 "task_type": "general_qa",
                 "strategy": "fallback",
-                "reasoning": "Planning failed - using fallback strategy",
                 "confidence": 0.3,
                 "document_type": "unknown",
-                "query_type": "unknown"
+                "query_intent": "query"
             }
     
     def _detect_document_type(self, doc_preview: str) -> str:
@@ -105,48 +152,20 @@ class PlannerAgent:
         
         preview_lower = doc_preview.lower()
         
-        # Resume indicators
-        resume_keywords = ["experience", "education", "skills", "resume", "cv", "curriculum vitae", "employment", "work history"]
+        resume_keywords = ["experience", "education", "skills", "resume", "cv"]
         if sum(1 for kw in resume_keywords if kw in preview_lower) >= 2:
             return "resume"
         
-        # Research paper indicators
-        research_keywords = ["abstract", "methodology", "results", "conclusion", "references", "doi", "journal", "conference"]
+        research_keywords = ["abstract", "methodology", "results", "conclusion"]
         if sum(1 for kw in research_keywords if kw in preview_lower) >= 2:
             return "research"
         
-        # Invoice indicators
-        invoice_keywords = ["invoice", "bill", "amount", "due", "payment", "total", "item", "quantity", "price"]
+        invoice_keywords = ["invoice", "bill", "amount", "payment", "total"]
         if sum(1 for kw in invoice_keywords if kw in preview_lower) >= 2:
             return "invoice"
         
-        # Legal document indicators
-        legal_keywords = ["agreement", "contract", "clause", "party", "obligation", "liability", "terms", "conditions"]
+        legal_keywords = ["agreement", "contract", "clause", "terms", "conditions"]
         if sum(1 for kw in legal_keywords if kw in preview_lower) >= 2:
             return "legal"
         
         return "unknown"
-    
-    def _detect_query_type(self, query: str) -> str:
-        """Detect query type"""
-        query_lower = query.lower()
-        
-        if any(word in query_lower for word in ["what", "who", "where", "when", "how"]):
-            return "question"
-        elif any(word in query_lower for word in ["summarize", "summary", "overview"]):
-            return "summary"
-        elif any(word in query_lower for word in ["list", "extract", "find"]):
-            return "extraction"
-        else:
-            return "general"
-    
-    def _get_strategy(self, task_type: str) -> str:
-        """Get the strategy for each task type"""
-        strategies = {
-            "resume_analysis": "extract_sections",
-            "research_summary": "extract_findings",
-            "invoice_analysis": "extract_financial",
-            "legal_document": "extract_clauses",
-            "general_summary": "comprehensive_summary"
-        }
-        return strategies.get(task_type, "comprehensive_summary")

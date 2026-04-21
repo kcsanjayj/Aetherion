@@ -1,20 +1,16 @@
 """
-Critic Agent - Self-criticism and validation
-Detects weak responses and forces regeneration
+Critic Agent - Self-Evaluation
+Self-checks responses for quality - Forces regeneration for weak responses
 """
 
-import re
-from typing import Dict, Any, List
+from typing import Dict, Any
 from backend.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
 class CriticAgent:
-    """
-    🔍 Critic Agent - Self-checks responses for quality
-    Forces regeneration for generic/short responses
-    """
+    """Self-checks responses for quality - Forces regeneration for weak responses"""
     
     def __init__(self):
         self.generic_phrases = [
@@ -23,60 +19,43 @@ class CriticAgent:
             "no details", "generic response", "template"
         ]
         self.min_response_length = 120
-        self.min_summary_length = 50
-        self.min_key_points = 2
-        
-        logger.info("🔍 Critic Agent initialized")
     
     def critique(self, answer: str, context: str, task: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Critique and validate the generated response
-        
-        Args:
-            answer: Generated response
-            context: Original document context
-            task: Task information
-            
-        Returns:
-            Critique results with validation score
-        """
+        """Critique and validate the generated response"""
         try:
             score = 0.0
             issues = []
             
-            # 🔥 IMMEDIATE SELF-CRITIC: Generic or short responses
+            # Immediate check: Generic or short
             if "generic" in answer.lower() or len(answer) < 120:
-                logger.warning("🔥 SELF-CRITIC: Generic or short response detected!")
                 return {
                     "is_valid": False,
                     "score": 0.0,
-                    "issues": ["Generic/short response - immediate regeneration needed"],
-                    "recommendations": ["REGENERATE_IMMEDIATELY"],
-                    "metrics": {"response_length": len(answer), "force_regenerate": True},
+                    "issues": ["Generic/short response"],
                     "force_regenerate": True
                 }
             
-            # Check for generic filler phrases
+            # Check for generic phrases
             generic_count = 0
             for phrase in self.generic_phrases:
                 if phrase.lower() in answer.lower():
                     generic_count += 1
-                    issues.append(f"Contains generic phrase: '{phrase}'")
+                    issues.append(f"Generic: '{phrase}'")
             
             if generic_count == 0:
                 score += 0.3
             
-            # Check response length
+            # Check length
             if len(answer) >= self.min_response_length:
                 score += 0.2
             else:
-                issues.append(f"Response too short: {len(answer)} chars")
+                issues.append(f"Too short: {len(answer)} chars")
             
-            # Check for proper structure
-            has_summary = "Summary:" in answer
-            has_key_points = "Key Points:" in answer or "•" in answer
+            # Check structure
+            has_summary = "Summary:" in answer or "📄" in answer
+            has_points = "Key Points:" in answer or "•" in answer or "📌" in answer
             
-            if has_summary and has_key_points:
+            if has_summary and has_points:
                 score += 0.2
             
             # Check grounding
@@ -87,29 +66,20 @@ class CriticAgent:
             if overlap > 10:
                 score += 0.1
             
-            # Final validation
             is_valid = score >= 0.6
             
-            logger.info(f"🔍 Critic score: {score:.2f}, Valid: {is_valid}")
+            if not is_valid:
+                logger.warning(f"🔍 Critic: {issues}")
+            else:
+                logger.info("🔍 Critic: Validated ✓")
             
             return {
                 "is_valid": is_valid,
                 "score": score,
                 "issues": issues,
-                "recommendations": ["Regenerate" if not is_valid else "Accept"],
-                "metrics": {
-                    "response_length": len(answer),
-                    "grounding_overlap": overlap
-                },
                 "force_regenerate": not is_valid
             }
             
         except Exception as e:
-            logger.error(f"Error in critic: {str(e)}")
-            return {
-                "is_valid": False,
-                "score": 0.0,
-                "issues": [f"Critic error: {str(e)}"],
-                "recommendations": ["Retry generation"],
-                "force_regenerate": True
-            }
+            logger.error(f"Critic error: {e}")
+            return {"is_valid": False, "score": 0.0, "issues": [str(e)], "force_regenerate": True}

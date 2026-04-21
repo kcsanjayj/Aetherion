@@ -9,104 +9,18 @@ import time
 from backend.utils.logger import setup_logger
 from backend.core.llm import LLMClient
 
+# Import from separate files
+from backend.agents.planner_agent import PlannerAgent
+from backend.agents.critic_agent import CriticAgent
+
 logger = setup_logger(__name__)
 
 
 # =============================================================================
-# 1. PLANNER AGENT - Decision Maker
+# 1. PLANNER AGENT - Imported from planner_agent.py
 # =============================================================================
 
-class PlannerAgent:
-    """Brain of the agentic system - decides the task based on document and query"""
-    
-    def __init__(self):
-        self.task_patterns = {
-            "resume_analysis": [
-                r"\bresume\b", r"\bcv\b", r"\bcurriculum\b", r"\bexperience\b",
-                r"\bskills\b", r"\beducation\b", r"\bqualification\b", r"\bjob\b"
-            ],
-            "research_summary": [
-                r"\bresearch\b", r"\bpaper\b", r"\bstudy\b", r"\babstract\b",
-                r"\bmethodology\b", r"\bresults\b", r"\bconclusion\b", r"\bfindings\b"
-            ],
-            "invoice_analysis": [
-                r"\binvoice\b", r"\bbill\b", r"\breceipt\b", r"\bpayment\b",
-                r"\bamount\b", r"\bdue\b", r"\bcharge\b", r"\btotal\b"
-            ],
-            "legal_document": [
-                r"\bagreement\b", r"\bcontract\b", r"\blegal\b", r"\blaw\b",
-                r"\bterms\b", r"\bconditions\b", r"\bclause\b", r"\bsection\b"
-            ]
-        }
-    
-    def plan(self, query: str, doc_preview: str) -> Dict[str, Any]:
-        """Plan the task based on query and document preview"""
-        try:
-            doc_type = self._detect_document_type(doc_preview)
-            
-            if doc_type == "resume" or "resume" in query.lower():
-                task_type = "resume_analysis"
-                strategy = "extract_skills_experience"
-            elif doc_type == "research":
-                task_type = "research_summary"
-                strategy = "abstract_key_findings"
-            elif doc_type == "invoice":
-                task_type = "invoice_analysis"
-                strategy = "extract_amounts_dates"
-            elif doc_type == "legal":
-                task_type = "legal_document"
-                strategy = "extract_clauses_obligations"
-            elif "summarize" in query.lower():
-                task_type = "general_summary"
-                strategy = "comprehensive_overview"
-            else:
-                task_type = "general_qa"
-                strategy = "contextual_answer"
-            
-            confidence = 0.8 if doc_type != "unknown" else 0.6
-            
-            logger.info(f"📋 Plan: {task_type} | Strategy: {strategy}")
-            
-            return {
-                "task_type": task_type,
-                "strategy": strategy,
-                "confidence": confidence,
-                "document_type": doc_type
-            }
-            
-        except Exception as e:
-            logger.error(f"Planning error: {e}")
-            return {
-                "task_type": "general_qa",
-                "strategy": "fallback",
-                "confidence": 0.3,
-                "document_type": "unknown"
-            }
-    
-    def _detect_document_type(self, doc_preview: str) -> str:
-        """Detect document type from preview"""
-        if not doc_preview:
-            return "unknown"
-        
-        preview_lower = doc_preview.lower()
-        
-        resume_keywords = ["experience", "education", "skills", "resume", "cv"]
-        if sum(1 for kw in resume_keywords if kw in preview_lower) >= 2:
-            return "resume"
-        
-        research_keywords = ["abstract", "methodology", "results", "conclusion"]
-        if sum(1 for kw in research_keywords if kw in preview_lower) >= 2:
-            return "research"
-        
-        invoice_keywords = ["invoice", "bill", "amount", "payment", "total"]
-        if sum(1 for kw in invoice_keywords if kw in preview_lower) >= 2:
-            return "invoice"
-        
-        legal_keywords = ["agreement", "contract", "clause", "terms", "conditions"]
-        if sum(1 for kw in legal_keywords if kw in preview_lower) >= 2:
-            return "legal"
-        
-        return "unknown"
+# PlannerAgent imported from backend.agents.planner_agent
 
 
 # =============================================================================
@@ -200,83 +114,10 @@ Return your response in this format:
 
 
 # =============================================================================
-# 3. CRITIC AGENT - Self-Evaluation
+# 3. CRITIC AGENT - Imported from critic_agent.py
 # =============================================================================
 
-class CriticAgent:
-    """Self-checks responses for quality - Forces regeneration for weak responses"""
-    
-    def __init__(self):
-        self.generic_phrases = [
-            "i don't have", "no information", "not mentioned", "not specified",
-            "cannot determine", "unable to", "no specific", "not provided",
-            "no details", "generic response", "template"
-        ]
-        self.min_response_length = 120
-    
-    def critique(self, answer: str, context: str, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Critique and validate the generated response"""
-        try:
-            score = 0.0
-            issues = []
-            
-            # Immediate check: Generic or short
-            if "generic" in answer.lower() or len(answer) < 120:
-                return {
-                    "is_valid": False,
-                    "score": 0.0,
-                    "issues": ["Generic/short response"],
-                    "force_regenerate": True
-                }
-            
-            # Check for generic phrases
-            generic_count = 0
-            for phrase in self.generic_phrases:
-                if phrase.lower() in answer.lower():
-                    generic_count += 1
-                    issues.append(f"Generic: '{phrase}'")
-            
-            if generic_count == 0:
-                score += 0.3
-            
-            # Check length
-            if len(answer) >= self.min_response_length:
-                score += 0.2
-            else:
-                issues.append(f"Too short: {len(answer)} chars")
-            
-            # Check structure
-            has_summary = "Summary:" in answer or "📄" in answer
-            has_points = "Key Points:" in answer or "•" in answer or "📌" in answer
-            
-            if has_summary and has_points:
-                score += 0.2
-            
-            # Check grounding
-            context_words = set(context.lower().split()[:200])
-            answer_words = set(answer.lower().split())
-            overlap = len(context_words.intersection(answer_words))
-            
-            if overlap > 10:
-                score += 0.1
-            
-            is_valid = score >= 0.6
-            
-            if not is_valid:
-                logger.warning(f"🔍 Critic: {issues}")
-            else:
-                logger.info("🔍 Critic: Validated ✓")
-            
-            return {
-                "is_valid": is_valid,
-                "score": score,
-                "issues": issues,
-                "force_regenerate": not is_valid
-            }
-            
-        except Exception as e:
-            logger.error(f"Critic error: {e}")
-            return {"is_valid": False, "score": 0.0, "issues": [str(e)], "force_regenerate": True}
+# CriticAgent imported from backend.agents.critic_agent
 
 
 # =============================================================================
