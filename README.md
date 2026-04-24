@@ -25,11 +25,26 @@ Aetherion is an agentic RAG system that:
 
 ---
 
+## 📋 Contents
+
+- [TL;DR](#-tldr)
+- [Demo Walkthrough](#-demo-walkthrough)
+- [Demo Preview](#-demo-preview)
+- [Key Idea](#-key-idea)
+- [Features](#-new-features)
+- [Performance](#performance)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Quick Start](#-quick-start)
+- [Why Engineers Care](#-why-engineers-care)
+
+---
+
 ## 🎥 Demo Walkthrough
 
-[![Watch Demo](docs/images/ui.png)](https://github.com/user-attachments/assets/a25725cb-8276-4dd6-80e5-abee429fd004)
+![Demo](docs/demo.gif)
 
-▶ Click to watch full demo
+*[Full video with sound](https://github.com/user-attachments/assets/a25725cb-8276-4dd6-80e5-abee429fd004)*
 
 ---
 

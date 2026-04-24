@@ -26,6 +26,7 @@ backend/data/
 backend/data/chroma_db/
 backend/data/uploads/
 backend/data/cache/
+data/runtime_config.json
 
 # Keep folder structure (optional)
 
