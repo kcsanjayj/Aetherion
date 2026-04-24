@@ -42,9 +42,9 @@ Aetherion is an agentic RAG system that:
 
 ## 🎥 Demo Walkthrough
 
-![Demo](docs/demo.gif)
+![Demo](https://github.com/user-attachments/assets/a25725cb-8276-4dd6-80e5-abee429fd004)
 
-*[Full video with sound](https://github.com/user-attachments/assets/a25725cb-8276-4dd6-80e5-abee429fd004)*
+▶ Autoplaying demo (88 seconds)
 
 ---
 
