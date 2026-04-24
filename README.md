@@ -2,15 +2,54 @@
 
 **Agentic Multi-LLM Orchestration Platform**
 
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Live Demo](https://img.shields.io/badge/demo-live-green)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-green)
+![Vercel](https://img.shields.io/badge/Deployed-Vercel-black)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-An agent-driven multi-LLM orchestration system with **Smart Query Mode**, **Clear Status Mechanism**, and **Self-Correcting AI**.
+> **Note:** Repository folder name is `agentic-rag` while project is Aetherion.
 
-> From single-shot generation → to validated, self-correcting AI systems with intelligent query routing.
+---
 
-**Why this matters:** Traditional RAG pipelines generate once and hope. Aetherion generates, evaluates, and iterates—blocking low-quality responses before they reach users. Plus, **Smart Query Mode** automatically detects your intent (compare, summarize, extract, analyze) and optimizes the response strategy.
+## 🚀 TL;DR
+
+Aetherion is an agentic RAG system that:
+
+- Routes queries across multiple LLMs  
+- Evaluates and self-corrects responses  
+- Blocks low-quality outputs before delivery  
+- Supports 7+ providers with dynamic fallback  
+
+👉 **Live Demo:** https://agentic-rag-gamma.vercel.app
+
+---
+
+## 🎥 Demo Walkthrough
+
+![Demo](docs/demo.gif)
+
+---
+
+## 📸 Demo Preview
+
+### UI Interface
+![UI](docs/images/ui.png)
+
+### Chat Interface
+![Chat](docs/images/chat.png)
+
+---
+
+## 🧠 Key Idea
+
+Traditional RAG pipelines generate once and return output.
+
+**Aetherion introduces:**
+- Evaluation-driven generation  
+- Iterative refinement loops  
+- Quality gating before response delivery  
+
+This shifts RAG systems from **static pipelines → adaptive AI systems**.
 
 ---
 
@@ -46,7 +85,7 @@ Non-blocking, clear API status indication:
 | Quality Assurance | None | **Up to 3 Iterations** |
 | Query Intent Detection | None | **4 Smart Modes** |
 
-*All metrics averaged across evaluation set. Dataset: 50 QA pairs (arXiv), GPT-4 rubric (relevance, grounding, completeness)*
+*All metrics evaluated using GPT-4 rubric (relevance, grounding, completeness) on 50 QA pairs (arXiv dataset).*
 
 ---
 
@@ -235,16 +274,14 @@ CORS_ORIGINS=https://your-vercel-app.vercel.app
 
 ---
 
-## Why Engineers Care
+## ⚡ Why Engineers Care
 
-Most RAG demos show generation. This shows **operational AI systems**:
+- Evaluation-first AI (not just generation)  
+- Observable agent pipelines  
+- Quality gating at inference time  
+- Multi-provider resilience  
 
-- **Evaluation as a first-class concern** — Not an afterthought
-- **Observable agent pipelines** — Know exactly what happened
-- **Quality gating at inference time** — Block bad outputs before delivery
-- **Multi-provider resilience** — No single point of failure
-
-Built for production reliability, not demo screenshots.
+Built for production, not demos.
 
 ---
 
