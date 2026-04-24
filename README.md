@@ -218,12 +218,18 @@ Enables adaptive inference: selecting the right model for the right task in real
 
 ## Quick Start
 
+### Local Development
+
 ```bash
 git clone https://github.com/kcsanjayj/agentic-rag.git
 cd agentic-rag
 pip install -r requirements.txt
 python start.py
 ```
+
+### One-Click Deploy
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/kcsanjayj/Aetherion&envs=AI_PROVIDER,OPENAI_MODEL,CORS_ORIGINS)
 
 **Setup:**
 1. Open http://localhost:8000
