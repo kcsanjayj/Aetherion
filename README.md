@@ -7,6 +7,8 @@
 - Multi-LLM fallback orchestration (7+ providers)
 - Evaluation-driven response refinement with bounded retries
 
+> **Impact:** Built a production-grade agentic RAG system with evaluation-driven response refinement and multi-LLM orchestration.
+
 A production-style agentic RAG system that improves LLM outputs using retrieval + evaluation + controlled retry loops. Every answer goes through **Generate → Evaluate → Refine → Finalize** before reaching the user.
 
 ![Aetherion UI](docs/images/ui.png)
@@ -17,9 +19,11 @@ A production-style agentic RAG system that improves LLM outputs using retrieval 
 
 Instead of trusting a single LLM response, the system acts like an exam system with a built-in examiner (critic agent) that scores every answer and triggers retries for low-quality outputs.
 
----
+> Think: Student writes answer → Teacher grades it → Student fixes mistakes → Final submission
 
 ## ⚙️ Core Pipeline
+
+<br>
 
 ### 🧩 Architecture
 ```
@@ -30,6 +34,8 @@ backend/agents/
 ├── retry_agent        → triggers refinement loop
 └── orchestrator       → controls full pipeline
 ```
+
+<br>
 
 ### 🔄 Execution Trace
 ```
@@ -64,6 +70,8 @@ Final Answer: "Self-attention computes Query, Key, Value matrices..."
 
 ---
 
+<br>
+
 ## ✨ Key Features
 
 - 🧠 **Evaluation-driven generation** — Every response is scored before being returned
@@ -73,6 +81,8 @@ Final Answer: "Self-attention computes Query, Key, Value matrices..."
 - ⚡ **Async FastAPI backend** — Handles concurrent requests efficiently
 
 ---
+
+<br>
 
 ## 🚀 Why not just LangChain?
 
