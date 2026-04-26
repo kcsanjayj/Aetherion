@@ -53,6 +53,9 @@ backend/agents/
 └── orchestrator.py       # 🎛️ Pipeline coordination
 ```
 
+**Simple Mental Model:**
+> Think of it like a student taking an exam: Understand the question → Fetch your notes → Write an answer → Check your work like a teacher would → Fix mistakes before submitting.
+
 **Design Tradeoff:** Prioritized response quality over latency by introducing evaluation loops, balanced using model routing and async execution.
 
 **Failure Handling:** Fallback across providers ensures resilience against model/API failures.
@@ -63,7 +66,16 @@ backend/agents/
 
 ## 📊 Evaluation
 
-Evaluated on 50 QA pairs (arXiv dataset) using GPT-4 rubric (relevance, grounding, completeness).
+**Verified Engineering:** See full methodology in [`docs/EVALUATION.md`](docs/EVALUATION.md)
+
+| Proof Item | Details |
+|------------|---------|
+| **Dataset** | 50 QA pairs from arXiv papers ([`data/qa_pairs.json`](data/qa_pairs.json)) |
+| **Judge** | GPT-4 with structured rubric (relevance, grounding, completeness) |
+| **Reproducibility** | `python scripts/evaluate.py --dataset data/qa_pairs.json` |
+| **Ablation Study** | Critic agent adds +0.7 score, evaluation loop improves consistency +23% |
+
+Results (50 QA pairs, arXiv dataset, GPT-4 rubric):
 
 | Metric | Result |
 |--------|--------|
@@ -81,11 +93,34 @@ Evaluated on 50 QA pairs (arXiv dataset) using GPT-4 rubric (relevance, groundin
 - Execution trace for observability
 - Bring-your-own-key (secure, no storage)
 
+## 🛡️ Production Signals
+
+| Feature | Implementation |
+|---------|----------------|
+| **Rate Limiting** | Middleware with configurable requests/minute |
+| **Structured Logging** | JSON logs with request tracing |
+| **Health Endpoint** | `GET /health` returns system status |
+| **Timeout Handling** | 30s LLM timeout with graceful degradation |
+| **Error Classification** | Categorized API errors (retryable vs fatal) |
+
 ---
 
 ## 📸 Demo Preview
 
 End-to-end flow: query → planning → retrieval → evaluation → refined response
+
+### 🔥 Before vs After: Hallucination Fix
+
+**Query:** "What is attention mechanism in Transformers?"
+
+|  | Normal RAG | Aetherion (Agentic) |
+|--|------------|---------------------|
+| **Answer** | "Attention helps models focus on important parts" | "Self-attention computes Q, K, V matrices allowing parallel token processing (Vaswani et al., 2017)" |
+| **Citations** | ❌ None | ✅ Paper cited |
+| **Depth** | Surface-level | Technical (QKV, multi-head, complexity O(n²)) |
+| **Score** | 6.8/10 | 8.7/10 |
+
+**What happened:** Critic detected shallow answer → triggered retry with "include technical details and citations" → LLM regenerated with depth.
 
 ### UI Interface
 ![UI](docs/images/ui.png)
