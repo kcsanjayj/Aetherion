@@ -1,6 +1,8 @@
 # 🚀 Aetherion — Agentic Multi-LLM RAG System
 
-> **A self-correcting RAG system that evaluates and rewrites its own answers before returning them.**
+## 🚀 Summary
+
+Aetherion turns a standard RAG pipeline into a **self-evaluating AI system** that improves its own answers before responding. 
 
 **TL;DR:**
 - Self-correcting RAG with critic evaluation loop
@@ -153,8 +155,3 @@ This project demonstrates:
 
 FastAPI · ChromaDB · OpenAI / Anthropic / Groq · sentence-transformers · Tailwind · Vercel · Railway · Docker
 
----
-
-## 🚀 Summary
-
-Aetherion turns a standard RAG pipeline into a **self-evaluating AI system** that improves its own answers before responding.
