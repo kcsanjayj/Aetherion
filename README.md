@@ -7,9 +7,9 @@
 - Multi-LLM fallback orchestration (7+ providers)
 - Evaluation-driven response refinement with bounded retries
 
-> **Impact:** Built a production-grade agentic RAG system with evaluation-driven response refinement and multi-LLM orchestration.
+> **Impact:** Built a agentic RAG system with evaluation-driven response refinement and multi-LLM orchestration.
 
-A production-style agentic RAG system that improves LLM outputs using retrieval + evaluation + controlled retry loops. Every answer goes through **Generate → Evaluate → Refine → Finalize** before reaching the user.
+A agentic RAG system that improves LLM outputs using retrieval + evaluation + controlled retry loops. Every answer goes through **Generate → Evaluate → Refine → Finalize** before reaching the user.
 
 ![Aetherion UI](docs/images/ui.png)
 
