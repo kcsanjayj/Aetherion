@@ -84,21 +84,6 @@ Final Answer: "Self-attention computes Query, Key, Value matrices..."
 
 ---
 
-<br>
-
-## 🚀 Why not just LangChain?
-
-| LangChain Agents | Aetherion |
-|------------------|-----------|
-| Tool-calling loop | Structured evaluation as **first-class pipeline stage** |
-| Unlimited retries | **Bounded retry control** (max 3 iterations) |
-| Post-hoc filtering | **Scoring-based acceptance** (must pass 7/10 threshold) |
-| Black-box execution | **Full execution trace** with intermediate scores |
-
-Unlike standard LangChain agents, Aetherion introduces structured evaluation as a first-class pipeline stage with bounded retry control and scoring-based acceptance.
-
----
-
 ## 📸 Live Demo
 
 **Try it:** https://agentic-rag-gamma.vercel.app
@@ -115,16 +100,6 @@ Unlike standard LangChain agents, Aetherion introduces structured evaluation as 
 | 🎯 **Higher accuracy** | critic filters weak responses before final output |
 | 💰 **Higher cost** | multiple LLM calls per query |
 | 🧩 **Better reliability** | fallback routing + failure recovery |
-
----
-
-## 🛡️ Production Features
-
-- Rate limiting middleware
-- Structured JSON logging
-- Timeout handling + graceful fallback
-- Multi-provider resilience layer
-- Health check endpoint
 
 ---
 
